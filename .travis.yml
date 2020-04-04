@@ -5,7 +5,7 @@ go:
 
 before_install:
   - sudo apt-get update
-  - sudo apt-get -y install zip
+  - sudo apt-get -y install zip ninja-build
 script: 
   - go get -u github.com/roman-mazur/bood/cmd/bood
   - cd build/
