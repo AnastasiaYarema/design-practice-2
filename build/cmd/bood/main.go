@@ -1,12 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"flag"
 	"github.com/google/blueprint"
 	"github.com/roman-mazur/bood"
-	"github.com/roman-mazur/bood/gomodule"
-	// TODO: Підставте свій власний пакет.
-	// "github.com/roman-mazur/design-practice-2-template/build/gomodule"
+	"github.com/AnastasiaYarema/design-practice-2/build/gomodule"
 	"io/ioutil"
 	"log"
 	"os"
@@ -35,6 +34,8 @@ func main() {
 	ctx := NewContext()
 
 	ninjaBuildPath := bood.GenerateBuildFile(config, ctx)
+
+	fmt.Println(ninjaBuildPath)
 
 	if !*dryRun {
 		config.Info.Println("Starting the build now")
