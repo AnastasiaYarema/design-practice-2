@@ -5,11 +5,19 @@ import (
 	"github.com/google/blueprint"
 	"github.com/roman-mazur/bood"
 	"path"
+	"strings"
 )
 
 var (
 	// Package context used to define Ninja build rules.
 	pctx = blueprint.NewPackageContext("github.com/AnastasiaYarema/design-practice-2/build/gomodule")
+
+	// Ninja rule to execute go test.
+	goTest = pctx.StaticRule("gotest", blueprint.RuleParams{
+		Command:     "cd $workDir && go test -v $testPkg > $outputTestReportPath",
+		Description: "test $testPkg",
+	}, "workDir", "testPkg", "outputTestReportPath")
+
 	// Ninja rule to execute go build.
 	goBuild = pctx.StaticRule("binaryBuild", blueprint.RuleParams{
 		Command:     "cd $workDir && go build -o $outputPath $pkg",
@@ -31,7 +39,7 @@ type testedBinaryModule struct {
 		// Go package name to build as a command with "go build".
 		Pkg string
 		// Go package name to test as a command with "go test"
-		TestPkg string
+	    TestPkg string
 		// List of source files.
 		Srcs []string
 		// Exclude patterns.
@@ -44,29 +52,45 @@ type testedBinaryModule struct {
 	}
 }
 
-func (gb *testedBinaryModule) DynamicDependencies(blueprint.DynamicDependerModuleContext) []string {
-	return gb.properties.Deps
+func sliceIncludes(element string, slice []string) bool {
+	includes := false
+
+	for _, v := range slice {
+		if element == v {
+			includes = true
+		} 
+	}
+
+	return includes
 }
 
 func (gb *testedBinaryModule) GenerateBuildActions(ctx blueprint.ModuleContext) {
 	name := ctx.ModuleName()
+	testReportName := name + ".txt"
 	config := bood.ExtractConfig(ctx)
 	config.Debug.Printf("Adding build actions for go binary module '%s'", name)
-	fmt.Println(gb.properties.TestPkg)
 
 	outputPath := path.Join(config.BaseOutputDir, "bin", name)
-
-	var inputs []string
-	inputErors := false
+	outputTestReportPath := path.Join(config.BaseOutputDir, "reports", testReportName)
+	
+	var inputs []string // files which will be passed to "go build"
+	var testInputs []string // files which will be passed to "go test", includes all golang files to watch to changes not only test files
+	inputErrors := false
 	for _, src := range gb.properties.Srcs {
 		if matches, err := ctx.GlobWithDeps(src, gb.properties.SrcsExclude); err == nil {
-			inputs = append(inputs, matches...)
+			testInputs = append(testInputs, matches...)
+
+			for _, input := range matches {
+				if !strings.Contains(input, "_test.go") && !sliceIncludes(input, inputs) {
+					inputs = append(inputs, input)
+				}
+			}
 		} else {
 			ctx.PropertyErrorf("srcs", "Cannot resolve files that match pattern %s", src)
-			inputErors = true
+			inputErrors = true
 		}
 	}
-	if inputErors {
+	if inputErrors {
 		return
 	}
 
@@ -85,6 +109,18 @@ func (gb *testedBinaryModule) GenerateBuildActions(ctx blueprint.ModuleContext) 
 		})
 		inputs = append(inputs, vendorDirPath)
 	}
+	
+	ctx.Build(pctx, blueprint.BuildParams{
+		Description: fmt.Sprintf("Build %s as Go test report", testReportName),
+		Rule:        goTest,
+		Outputs:     []string{outputTestReportPath},
+		Implicits:   testInputs,
+		Args: map[string]string{
+			"outputTestReportPath": outputTestReportPath,
+			"workDir":              ctx.ModuleDir(),
+			"testPkg":              gb.properties.TestPkg,
+		},
+	})
 
 	ctx.Build(pctx, blueprint.BuildParams{
 		Description: fmt.Sprintf("Build %s as Go binary", name),
