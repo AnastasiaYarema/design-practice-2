@@ -1,0 +1,15 @@
+language: go
+
+go:
+  - 1.14
+
+before_install:
+  - sudo apt-get update
+  - sudo apt-get -y install zip
+script: 
+  - go get -u github.com/roman-mazur/bood/cmd/bood
+  - cd build/
+  - bood
+  - rm -f build.bood
+  - mv post-build.bood build.bood
+  - ./out/bin/bood

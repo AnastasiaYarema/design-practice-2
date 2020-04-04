@@ -12,6 +12,7 @@ var (
 	// Package context used to define Ninja build rules.
 	pctx = blueprint.NewPackageContext("github.com/AnastasiaYarema/design-practice-2/build/gomodule")
 
+	// Ninja rule to execute go test.
 	goTest = pctx.StaticRule("gotest", blueprint.RuleParams{
 		Command:     "cd $workDir && go test -v $testPkg > $outputTestReportPath",
 		Description: "test $testPkg",
@@ -49,10 +50,6 @@ type testedBinaryModule struct {
 		// Example of how to specify dependencies.
 		Deps []string
 	}
-}
-
-func (gb *testedBinaryModule) DynamicDependencies(blueprint.DynamicDependerModuleContext) []string {
-	return gb.properties.Deps
 }
 
 func sliceIncludes(element string, slice []string) bool {
@@ -96,8 +93,6 @@ func (gb *testedBinaryModule) GenerateBuildActions(ctx blueprint.ModuleContext) 
 	if inputErrors {
 		return
 	}
-	fmt.Println(testInputs)
-	fmt.Println(inputs)
 
 	if gb.properties.VendorFirst {
 		vendorDirPath := path.Join(ctx.ModuleDir(), "vendor")
