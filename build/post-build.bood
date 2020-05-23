@@ -11,6 +11,32 @@ go_binary {
   srcs: ["**/*.go", "../go.mod"]
 }
 
+go_binary {
+  // Module (and output) name.
+  name: "archive-test",
+
+  // Go package to build.
+  pkg: "github.com/AnastasiaYarema/design-practice-2/build/archive",
+  // Go package to test.
+  testPkg: "github.com/AnastasiaYarema/design-practice-2/build/archive",
+  
+  // Build inputs.
+  srcs: ["**/*.go", "../go.mod"]
+}
+
+go_binary {
+  // Module (and output) name.
+  name: "gomodule-test",
+
+  // Go package to build.
+  pkg: "github.com/AnastasiaYarema/design-practice-2/build/gomodule",
+  // Go package to test.
+  testPkg: "github.com/AnastasiaYarema/design-practice-2/build/gomodule",
+  
+  // Build inputs.
+  srcs: ["**/*.go", "../go.mod"]
+}
+
 archive_bin {
   name: "my-archive",
   binary: "bood"
